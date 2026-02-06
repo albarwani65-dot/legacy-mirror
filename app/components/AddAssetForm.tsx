@@ -97,7 +97,12 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                 value: data.category === 'EOSB' ? Number(data.value) : Math.round(Number(data.value) * 100),
                 qty: data.qty ? Number(data.qty) : undefined,
                 ticker: data.ticker,
-                lastUpdated: Date.now()
+                lastUpdated: Date.now(),
+                // Real Estate Fields
+                marketValue: data.marketValue,
+                loanValue: data.loanValue,
+                accountNumber: data.accountNumber,
+                notes: data.notes
             };
 
             const result = AssetSchema.safeParse(tempAsset);
@@ -268,6 +273,67 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                             >
                                 ✨ Auto-Fetch Current Price
                             </button>
+                        </div>
+                    )}
+
+                    {formData.category === 'REAL_ESTATE' && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Market Value</label>
+                                    <input
+                                        type="number"
+                                        // Display as units
+                                        value={formData.marketValue ? formData.marketValue / 100 : ''}
+                                        onChange={e => {
+                                            const mVal = Number(e.target.value) * 100; // Store as cents
+                                            const lVal = formData.loanValue || 0; // Assume loanValue is already in cents
+                                            const netCents = mVal - lVal;
+                                            setFormData(prev => ({ ...prev, marketValue: mVal, value: netCents })); // Value in Cents
+                                        }}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                        placeholder="0.00"
+                                    />
+                                    {errors.marketValue && <p className="text-red-500 text-xs mt-1">{errors.marketValue}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Outstanding Loan</label>
+                                    <input
+                                        type="number"
+                                        value={formData.loanValue ? formData.loanValue / 100 : ''}
+                                        onChange={e => {
+                                            const lVal = Number(e.target.value) * 100; // Cents
+                                            const mVal = formData.marketValue || 0; // Assume marketValue is already in cents
+                                            const netCents = mVal - lVal;
+                                            setFormData(prev => ({ ...prev, loanValue: lVal, value: netCents })); // Value in Cents
+                                        }}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-red-500 transition-colors"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Account # (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.accountNumber || ''}
+                                        onChange={e => setFormData({ ...formData, accountNumber: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                        placeholder="XXXX"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Notes (Optional)</label>
+                                    <input
+                                        type="text"
+                                        value={formData.notes || ''}
+                                        onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                        placeholder="Details..."
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
 

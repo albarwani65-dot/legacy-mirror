@@ -9,11 +9,15 @@ import {
   Bitcoin,
   Car,
   Briefcase,
+  LogOut,
   type LucideIcon
 } from 'lucide-react';
 import AddAssetForm from './components/AddAssetForm';
 import { Asset, AssetCategory } from '@/lib/types';
 import { subscribeToAssets, addAssetToFirestore } from '@/lib/client-db';
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 // Helper to map category to icon and color
 const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color: string } => {
@@ -43,6 +47,20 @@ function AssetCard({ asset }: { asset: Asset }) {
       {asset.ticker && (
         <p className="text-sm text-slate-500 mt-2 font-mono">{asset.ticker}</p>
       )}
+      {asset.category === 'REAL_ESTATE' && asset.marketValue && (
+        <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <p className="text-slate-500">Market Value</p>
+            <p className="text-slate-300">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(asset.marketValue / 100)}</p>
+          </div>
+          {asset.loanValue && (
+            <div className="text-right">
+              <p className="text-slate-500">Outstanding Loan</p>
+              <p className="text-red-400">-{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(asset.loanValue / 100)}</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -50,15 +68,31 @@ function AssetCard({ asset }: { asset: Asset }) {
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const userId = "user-1"; // Hardcoded for this personalized mirror
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
-  // Subscribe to Firestore updates
+  // Auth Listener
   useEffect(() => {
-    const unsubscribe = subscribeToAssets(userId, (newAssets) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        router.push("/login");
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  // Subscribe to Firestore updates (only when user is logged in)
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = subscribeToAssets(user.uid, (newAssets) => {
       setAssets(newAssets);
     });
     return () => unsubscribe();
-  }, [userId]);
+  }, [user]);
 
   // Computed Total Net Worth
   const totalNetWorth = useMemo(() => {
@@ -66,16 +100,28 @@ export default function Home() {
   }, [assets]);
 
   const handleAddAsset = async (newAsset: Asset) => {
-    // Optimistic update could go here, but Firestore is fast enough for local feel usually.
-    // We just write to DB, and the subscription will update the UI.
+    if (!user) return;
     try {
-      await addAssetToFirestore(userId, newAsset);
+      // Ensure the asset is tagged with the correct user ID
+      const assetWithId = { ...newAsset, userId: user.uid };
+      await addAssetToFirestore(user.uid, assetWithId);
       setIsFormOpen(false);
     } catch (error: any) {
       console.error("Failed to add asset full error:", error);
       alert(`Failed to add asset: ${error.message} (Code: ${error.code})`);
     }
   };
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+    router.push("/login"); // Explicit redirect mostly redundant due to auth listener but good for UX
+  };
+
+  if (loading) {
+    return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-emerald-500">Loading Legacy...</div>;
+  }
+
+  if (!user) return null; // Will redirect
 
   return (
     <main className="min-h-screen bg-slate-950 text-white p-8 relative">
@@ -88,12 +134,21 @@ export default function Home() {
               {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(totalNetWorth / 100)}
             </p>
           </div>
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all"
-          >
-            <Plus size={20} /> Add Asset
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={handleSignOut}
+              className="text-slate-500 hover:text-white transition-colors"
+              title="Sign Out"
+            >
+              <LogOut size={20} />
+            </button>
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all"
+            >
+              <Plus size={20} /> Add Asset
+            </button>
+          </div>
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">

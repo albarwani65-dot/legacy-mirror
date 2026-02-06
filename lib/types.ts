@@ -20,6 +20,11 @@ export const AssetSchema = z.object({
   qty: z.number().optional(), // For stocks/gold
   ticker: z.string().optional(), // For live lookups
   lastUpdated: z.number(), // Timestamp
+  // Real Estate / Advanced Fields
+  marketValue: z.number().optional(), // In cents
+  loanValue: z.number().optional(), // In cents
+  accountNumber: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export type Asset = z.infer<typeof AssetSchema>;
