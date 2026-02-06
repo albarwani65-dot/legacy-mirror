@@ -92,7 +92,9 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                 userId: "user-1", // Placeholder
                 category: data.category,
                 name: data.name,
-                value: Number(data.value),
+                // If EOSB, value is already in cents from calculation.
+                // If Other, value is in Currency Units (from input), so * 100.
+                value: data.category === 'EOSB' ? Number(data.value) : Math.round(Number(data.value) * 100),
                 qty: data.qty ? Number(data.qty) : undefined,
                 ticker: data.ticker,
                 lastUpdated: Date.now()
@@ -182,7 +184,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                         {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                     </div>
 
-                    {formData.category === 'EOSB' ? (
+                    {formData.category === 'EOSB' && (
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Monthly Basic Salary (AED)</label>
@@ -217,6 +219,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
 
                             {errors.form && <p className="text-red-500 text-xs mt-1">{errors.form}</p>}
                         </div>
+                    )}
                     {(formData.category === 'EQUITY' || formData.category === 'CRYPTO') && (
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -252,10 +255,11 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                                     // Use public key
                                     const key = process.env.NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY || "";
                                     const price = await fetchStockPrice(formData.ticker, key);
-                                    
+
                                     if (price !== null) {
                                         const qty = Number(formData.qty) || 1;
-                                        setFormData(prev => ({ ...prev, value: price * qty }));
+                                        // Store as currency units (e.g. 150.00) for the input field
+                                        setFormData(prev => ({ ...prev, value: (price * qty) / 100 }));
                                     } else {
                                         setErrors({ form: "Could not fetch price. Please enter value manually." });
                                     }
@@ -266,7 +270,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                             </button>
                         </div>
                     )}
-                    
+
                     {/* Value Field - Always visible for non-EOSB, and serves as the primary input or override */}
                     {formData.category !== 'EOSB' && (
                         <div>
