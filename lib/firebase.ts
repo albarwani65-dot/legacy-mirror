@@ -13,6 +13,7 @@ const firebaseConfig = {
 };
 
 // Singleton pattern for client side
+// Check if apps are already initialized to avoid "Firebase App named '[DEFAULT]' already exists" error
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
