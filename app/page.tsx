@@ -78,7 +78,7 @@ export default function Home() {
       if (currentUser) {
         setUser(currentUser);
       } else {
-        router.push("/login");
+        router.push("/signin");
       }
       setLoading(false);
     });
@@ -114,7 +114,7 @@ export default function Home() {
 
   const handleSignOut = async () => {
     await signOut(auth);
-    router.push("/login"); // Explicit redirect mostly redundant due to auth listener but good for UX
+    router.push("/signin"); // Explicit redirect mostly redundant due to auth listener but good for UX
   };
 
   if (loading) {
