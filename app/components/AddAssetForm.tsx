@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { fetchStockPrice } from "@/lib/logic/stock-api";
 
 export function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
@@ -216,9 +217,62 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
 
                             {errors.form && <p className="text-red-500 text-xs mt-1">{errors.form}</p>}
                         </div>
-                    ) : (
+                    {(formData.category === 'EQUITY' || formData.category === 'CRYPTO') && (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Ticker</label>
+                                    <input
+                                        type="text"
+                                        value={formData.ticker || ''}
+                                        onChange={e => setFormData({ ...formData, ticker: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors uppercase"
+                                        placeholder="e.g. NVDA"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Quantity</label>
+                                    <input
+                                        type="number"
+                                        value={formData.qty || ''}
+                                        onChange={e => setFormData({ ...formData, qty: e.target.value })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
+                                        placeholder="0"
+                                    />
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    if (!formData.ticker) {
+                                        setErrors({ form: "Please enter a ticker first" });
+                                        return;
+                                    }
+                                    setErrors({}); // Clear errors
+                                    // Use public key
+                                    const key = process.env.NEXT_PUBLIC_ALPHA_VANTAGE_API_KEY || "";
+                                    const price = await fetchStockPrice(formData.ticker, key);
+                                    
+                                    if (price !== null) {
+                                        const qty = Number(formData.qty) || 1;
+                                        setFormData(prev => ({ ...prev, value: price * qty }));
+                                    } else {
+                                        setErrors({ form: "Could not fetch price. Please enter value manually." });
+                                    }
+                                }}
+                                className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 rounded-lg transition-colors border border-zinc-700 hover:border-zinc-600"
+                            >
+                                ✨ Auto-Fetch Current Price
+                            </button>
+                        </div>
+                    )}
+                    
+                    {/* Value Field - Always visible for non-EOSB, and serves as the primary input or override */}
+                    {formData.category !== 'EOSB' && (
                         <div>
-                            <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Value (Base Currency)</label>
+                            <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">
+                                Total Value {(formData.category === 'EQUITY' || formData.category === 'CRYPTO') ? '(Auto-Calculated or Manual)' : '(Base Currency)'}
+                            </label>
                             <input
                                 type="number"
                                 value={formData.value || ''}
@@ -227,31 +281,6 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                                 placeholder="0.00"
                             />
                             {errors.value && <p className="text-red-500 text-xs mt-1">{errors.value}</p>}
-                        </div>
-                    )}
-
-                    {(formData.category === 'EQUITY' || formData.category === 'CRYPTO') && (
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Ticker</label>
-                                <input
-                                    type="text"
-                                    value={formData.ticker || ''}
-                                    onChange={e => setFormData({ ...formData, ticker: e.target.value })}
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                    placeholder="AAPL, BTC"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Quantity</label>
-                                <input
-                                    type="number"
-                                    value={formData.qty || ''}
-                                    onChange={e => setFormData({ ...formData, qty: e.target.value })}
-                                    className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
-                                    placeholder="0"
-                                />
-                            </div>
                         </div>
                     )}
 
