@@ -55,6 +55,10 @@ export default function LoginPage() {
                         </>
                     )}
                 </button>
+
+                <p className="mt-8 text-xs text-slate-600 font-mono">
+                    Debug: API Key Status = {process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? "Loaded" : "MISSING"}
+                </p>
             </div>
         </main>
     );

@@ -12,6 +12,13 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
+console.log("[FIREBASE CONFIG] API Key Loaded:", !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+if (process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+    console.log("[FIREBASE CONFIG] API Key First Chars:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY.substring(0, 5) + "...");
+} else {
+    console.error("[FIREBASE CONFIG] API Key is MISSING in Environment!");
+}
+
 // Singleton pattern for client side
 // Check if apps are already initialized to avoid "Firebase App named '[DEFAULT]' already exists" error
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
