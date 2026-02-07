@@ -1,3 +1,4 @@
+import { db } from "./firebase";
 import { collection, onSnapshot, doc, setDoc, query, orderBy, getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import { Asset, HistoryRecord } from "./types";
 
