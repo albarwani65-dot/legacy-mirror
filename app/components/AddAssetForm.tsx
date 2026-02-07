@@ -45,7 +45,18 @@ interface AddAssetFormProps {
 
 export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAssetFormProps) {
     const [step, setStep] = useState(initialData ? 2 : 1);
-    const [formData, setFormData] = useState<Partial<any>>(initialData || {});
+    const [formData, setFormData] = useState<Partial<any>>(() => {
+        if (!initialData) return {};
+        const data = { ...initialData };
+        // Value in DB is in cents. Form expects units (e.g. Dollars/AED).
+        // EOSB is treated separately in logic, but standard assets need division.
+        if (data.category !== 'EOSB') {
+            if (data.value) data.value = data.value / 100;
+        }
+        if (data.marketValue) data.marketValue = data.marketValue / 100;
+        if (data.loanValue) data.loanValue = data.loanValue / 100;
+        return data;
+    });
 
     // EOSB State
     const [eosbInputs, setEosbInputs] = useState({
