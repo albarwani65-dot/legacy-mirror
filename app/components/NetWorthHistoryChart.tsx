@@ -48,7 +48,11 @@ export default function NetWorthHistoryChart({ data }: NetWorthHistoryChartProps
         : chartData;
 
     if (data.length === 0) {
-        return null;
+        return (
+            <div className="mt-12 bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex items-center justify-center text-slate-500">
+                <p>No history data available yet. Add or Edit an asset to start tracking.</p>
+            </div>
+        );
     }
 
     return (

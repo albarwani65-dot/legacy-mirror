@@ -122,6 +122,7 @@ export default function Home() {
     });
 
     const unsubscribeHistory = subscribeToHistory(user.uid, (newHistory) => {
+      console.log("History update:", newHistory);
       setHistory(newHistory);
     });
 
