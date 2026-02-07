@@ -11,7 +11,6 @@ import {
   Briefcase,
   LogOut,
   CreditCard,
-  CreditCard,
   Pencil,
   Trash2,
   type LucideIcon
