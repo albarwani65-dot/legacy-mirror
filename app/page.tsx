@@ -21,7 +21,6 @@ import { subscribeToAssets, addAssetToFirestore } from '@/lib/client-db';
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 // Helper to map category to icon and color
 const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color: string } => {
@@ -71,19 +70,7 @@ function AssetCard({ asset }: { asset: Asset }) {
 
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-xl">
-        <p className="text-slate-400 mb-1 text-xs uppercase tracking-wider">{label}</p>
-        <p className="text-emerald-400 font-mono font-bold text-lg">
-          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(payload[0].value)}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
+
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -206,32 +193,19 @@ export default function Home() {
               <TrendingUp size={20} className="text-emerald-500" />
               Assets vs. Liabilities
             </h2>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={debtVsAssetData} layout="vertical" barSize={40} margin={{ top: 0, right: 120, left: 0, bottom: 0 }}>
-                  <XAxis type="number" hide />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#94a3b8', fontSize: 14 }}
-                    width={60}
-                  />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    <LabelList
-                      dataKey="value"
-                      position="right"
-                      fill="#fff"
-                      formatter={(val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(val)}
-                    />
-                    {debtVsAssetData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.name === 'Assets' ? '#10b981' : '#f43f5e'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
+                <p className="text-slate-400 mb-2 uppercase tracking-wider text-xs font-semibold">Total Assets</p>
+                <p className="text-3xl font-mono text-emerald-400">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(totalAssets / 100)}
+                </p>
+              </div>
+              <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
+                <p className="text-slate-400 mb-2 uppercase tracking-wider text-xs font-semibold">Total Debt</p>
+                <p className="text-3xl font-mono text-rose-500">
+                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(totalLiabilities / 100)}
+                </p>
+              </div>
             </div>
           </section>
         )}
