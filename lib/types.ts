@@ -30,10 +30,10 @@ export const AssetSchema = z.object({
 
 export type Asset = z.infer<typeof AssetSchema>;
 
-export const HistorySchema = z.object({
-  assetId: z.string(),
-  date: z.number(),
-  value: z.number(),
-});
-
-export type HistoryRecord = z.infer<typeof HistorySchema>;
+export interface HistoryRecord {
+  id: string;
+  timestamp: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+}

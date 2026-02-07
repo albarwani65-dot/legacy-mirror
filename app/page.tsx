@@ -11,14 +11,17 @@ import {
   Briefcase,
   LogOut,
   CreditCard,
+  CreditCard,
   Pencil,
+  Trash2,
   type LucideIcon
 } from 'lucide-react';
 
 
 import AddAssetForm from './components/AddAssetForm';
-import { Asset, AssetCategory } from '@/lib/types';
-import { subscribeToAssets, addAssetToFirestore } from '@/lib/client-db';
+import NetWorthHistoryChart from './components/NetWorthHistoryChart';
+import { Asset, AssetCategory, HistoryRecord } from '@/lib/types';
+import { subscribeToAssets, addAssetToFirestore, saveSnapshot, subscribeToHistory, deleteAssetFromFirestore } from '@/lib/client-db';
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -37,20 +40,30 @@ const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color:
   }
 };
 
-function AssetCard({ asset, onEdit }: { asset: Asset; onEdit: (asset: Asset) => void }) {
+function AssetCard({ asset, onEdit, onDelete }: { asset: Asset; onEdit: (asset: Asset) => void; onDelete: (asset: Asset) => void }) {
   const { icon: Icon, color } = getCategoryDetails(asset.category);
 
   return (
-    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-colors">
+    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-colors group">
       <div className={`flex items-center gap-4 mb-4 ${color}`}>
         <Icon size={24} />
         <h2 className="text-xl font-semibold text-white truncate flex-1">{asset.name}</h2>
-        <button
-          onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
-          className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
-        >
-          <Pencil size={16} />
-        </button>
+        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
+            title="Edit"
+          >
+            <Pencil size={16} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(asset); }}
+            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-full transition-colors"
+            title="Delete"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
       <p className="text-3xl font-mono">
         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(asset.value / 100)}
@@ -81,6 +94,7 @@ function AssetCard({ asset, onEdit }: { asset: Asset; onEdit: (asset: Asset) => 
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Asset | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
@@ -106,7 +120,15 @@ export default function Home() {
     const unsubscribe = subscribeToAssets(user.uid, (newAssets) => {
       setAssets(newAssets);
     });
-    return () => unsubscribe();
+
+    const unsubscribeHistory = subscribeToHistory(user.uid, (newHistory) => {
+      setHistory(newHistory);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeHistory();
+    };
   }, [user]);
 
   // Computed Values
@@ -134,6 +156,7 @@ export default function Home() {
     if (!user) return;
     try {
       await addAssetToFirestore(user.uid, newAsset);
+      await saveSnapshot(user.uid); // Trigger history snapshot
       setIsFormOpen(false);
       setSelectedAsset(undefined);
     } catch (error: any) {
@@ -145,6 +168,16 @@ export default function Home() {
   const handleEditAsset = (asset: Asset) => {
     setSelectedAsset(asset);
     setIsFormOpen(true);
+  };
+
+  const handleDeleteAsset = async (asset: Asset) => {
+    if (!user || !confirm(`Are you sure you want to delete ${asset.name}?`)) return;
+    try {
+      await deleteAssetFromFirestore(user.uid, asset.id);
+      await saveSnapshot(user.uid); // Trigger history snapshot
+    } catch (error) {
+      console.error("Error deleting asset:", error);
+    }
   };
 
   const handleSignOut = async () => {
@@ -189,7 +222,7 @@ export default function Home() {
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assets.map((asset) => (
-            <AssetCard key={asset.id} asset={asset} onEdit={handleEditAsset} />
+            <AssetCard key={asset.id} asset={asset} onEdit={handleEditAsset} onDelete={handleDeleteAsset} />
           ))}
 
           {assets.length === 0 && (
@@ -221,6 +254,11 @@ export default function Home() {
               </div>
             </div>
           </section>
+        )}
+
+        {/* History Chart */}
+        {history.length > 0 && (
+          <NetWorthHistoryChart data={history} />
         )}
       </div>
 
