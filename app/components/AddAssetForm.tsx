@@ -37,9 +37,15 @@ const parseNumber = (val: string) => {
     return Number(val.replace(/,/g, ''));
 };
 
-export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (asset: any) => void; onClose: () => void }) {
-    const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState<Partial<any>>({});
+interface AddAssetFormProps {
+    onAddAsset: (asset: any) => void;
+    onClose: () => void;
+    initialData?: any;
+}
+
+export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAssetFormProps) {
+    const [step, setStep] = useState(initialData ? 2 : 1);
+    const [formData, setFormData] = useState<Partial<any>>(initialData || {});
 
     // EOSB State
     const [eosbInputs, setEosbInputs] = useState({
@@ -104,7 +110,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
 
             // Temporary ID and timestamp for validation
             const tempAsset = {
-                id: crypto.randomUUID(),
+                id: formData.id || crypto.randomUUID(),
                 userId: "user-1", // Placeholder
                 category: data.category,
                 name: data.name,
@@ -167,7 +173,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
             </button>
 
             <div className="flex items-center justify-between mb-8">
-                <h2 className="text-xl font-medium text-emerald-400">Add New Asset</h2>
+                <h2 className="text-xl font-medium text-emerald-400">{initialData ? 'Edit Asset' : 'Add New Asset'}</h2>
                 <div className="flex gap-2 mr-8">
                     {[1, 2, 3].map((s) => (
                         <div key={s} className={cn("h-1 w-8 rounded-full transition-all", step >= s ? "bg-emerald-500" : "bg-zinc-700")} />
@@ -433,7 +439,7 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                             <ChevronLeft className="w-4 h-4 mr-1" /> Back
                         </button>
                         <button onClick={finalSubmit} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-lg font-medium transition-colors w-full ml-4">
-                            Confirm & Add Asset
+                            {initialData ? 'Update Asset' : 'Confirm & Add Asset'}
                         </button>
                     </div>
                 </div>

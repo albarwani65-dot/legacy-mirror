@@ -11,6 +11,7 @@ import {
   Briefcase,
   LogOut,
   CreditCard,
+  Pencil,
   type LucideIcon
 } from 'lucide-react';
 
@@ -36,14 +37,20 @@ const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color:
   }
 };
 
-function AssetCard({ asset }: { asset: Asset }) {
+function AssetCard({ asset, onEdit }: { asset: Asset; onEdit: (asset: Asset) => void }) {
   const { icon: Icon, color } = getCategoryDetails(asset.category);
 
   return (
     <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-colors">
       <div className={`flex items-center gap-4 mb-4 ${color}`}>
         <Icon size={24} />
-        <h2 className="text-xl font-semibold text-white truncate">{asset.name}</h2>
+        <h2 className="text-xl font-semibold text-white truncate flex-1">{asset.name}</h2>
+        <button
+          onClick={(e) => { e.stopPropagation(); onEdit(asset); }}
+          className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-colors"
+        >
+          <Pencil size={16} />
+        </button>
       </div>
       <p className="text-3xl font-mono">
         {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(asset.value / 100)}
@@ -75,6 +82,7 @@ function AssetCard({ asset }: { asset: Asset }) {
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | undefined>(undefined);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -125,14 +133,18 @@ export default function Home() {
   const handleAddAsset = async (newAsset: Asset) => {
     if (!user) return;
     try {
-      // Ensure the asset is tagged with the correct user ID
-      const assetWithId = { ...newAsset, userId: user.uid };
-      await addAssetToFirestore(user.uid, assetWithId);
+      await addAssetToFirestore(user.uid, newAsset);
       setIsFormOpen(false);
+      setSelectedAsset(undefined);
     } catch (error: any) {
       console.error("Failed to add asset full error:", error);
       alert(`Failed to add asset: ${error.message} (Code: ${error.code})`);
     }
+  };
+
+  const handleEditAsset = (asset: Asset) => {
+    setSelectedAsset(asset);
+    setIsFormOpen(true);
   };
 
   const handleSignOut = async () => {
@@ -166,17 +178,18 @@ export default function Home() {
               <LogOut size={20} />
             </button>
             <button
-              onClick={() => setIsFormOpen(true)}
-              className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 px-6 py-3 rounded-full font-bold flex items-center gap-2 transition-all"
+              onClick={() => { setSelectedAsset(undefined); setIsFormOpen(true); }}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-emerald-900/20"
             >
-              <Plus size={20} /> Add Asset
+              <Plus size={20} />
+              <span>Add Asset</span>
             </button>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assets.map((asset) => (
-            <AssetCard key={asset.id} asset={asset} />
+            <AssetCard key={asset.id} asset={asset} onEdit={handleEditAsset} />
           ))}
 
           {assets.length === 0 && (
@@ -212,14 +225,17 @@ export default function Home() {
       </div>
 
       {/* Modal Overlay */}
-      {isFormOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <AddAssetForm
-            onAddAsset={handleAddAsset}
-            onClose={() => setIsFormOpen(false)}
-          />
-        </div>
-      )}
-    </main>
+      {
+        isFormOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <AddAssetForm
+              onAddAsset={handleAddAsset}
+              onClose={() => { setIsFormOpen(false); setSelectedAsset(undefined); }}
+              initialData={selectedAsset}
+            />
+          </div>
+        )
+      }
+    </main >
   );
 }
