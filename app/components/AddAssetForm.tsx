@@ -313,7 +313,7 @@ export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAs
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Market Value</label>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Market Value (AED)</label>
                                     <input
                                         type="text"
                                         // Display as units with commas
@@ -331,7 +331,7 @@ export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAs
                                     {errors.marketValue && <p className="text-red-500 text-xs mt-1">{errors.marketValue}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Outstanding Loan</label>
+                                    <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Outstanding Loan (AED)</label>
                                     <input
                                         type="text"
                                         value={formData.loanValue ? formatNumber(formData.loanValue / 100) : ''}
@@ -376,8 +376,8 @@ export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAs
                     {formData.category !== 'EOSB' && (
                         <div>
                             <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">
-                                {formData.category === 'LIABILITY' ? 'Loan / Outstanding Amount' :
-                                    (formData.category === 'EQUITY' || formData.category === 'CRYPTO') ? 'Total Value (Auto-Calculated or Manual)' : 'Total Value (Base Currency)'}
+                                {formData.category === 'LIABILITY' ? 'Loan / Outstanding Amount (AED)' :
+                                    (formData.category === 'EQUITY' || formData.category === 'CRYPTO') ? 'Total Value (AED - Auto/Manual)' : 'Total Value (AED)'}
                             </label>
                             <input
                                 type="text"
