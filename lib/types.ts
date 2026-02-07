@@ -7,6 +7,7 @@ export const AssetCategoryEnum = z.enum([
   "CRYPTO",
   "VEHICLE",
   "EOSB",
+  "LIABILITY",
 ]);
 
 export type AssetCategory = z.infer<typeof AssetCategoryEnum>;

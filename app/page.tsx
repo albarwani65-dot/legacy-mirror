@@ -10,14 +10,18 @@ import {
   Car,
   Briefcase,
   LogOut,
+  CreditCard,
   type LucideIcon
 } from 'lucide-react';
+
+
 import AddAssetForm from './components/AddAssetForm';
 import { Asset, AssetCategory } from '@/lib/types';
 import { subscribeToAssets, addAssetToFirestore } from '@/lib/client-db';
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // Helper to map category to icon and color
 const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color: string } => {
@@ -28,6 +32,7 @@ const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color:
     case 'CRYPTO': return { icon: Bitcoin, color: 'text-orange-400' };
     case 'VEHICLE': return { icon: Car, color: 'text-red-400' };
     case 'EOSB': return { icon: Briefcase, color: 'text-purple-400' };
+    case 'LIABILITY': return { icon: CreditCard, color: 'text-rose-500' };
     default: return { icon: Wallet, color: 'text-slate-400' };
   }
 };
@@ -63,7 +68,22 @@ function AssetCard({ asset }: { asset: Asset }) {
       )}
     </div>
   );
+
 }
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900 border border-slate-800 p-4 rounded-lg shadow-xl">
+        <p className="text-slate-400 mb-1 text-xs uppercase tracking-wider">{label}</p>
+        <p className="text-emerald-400 font-mono font-bold text-lg">
+          {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(payload[0].value)}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default function Home() {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -94,10 +114,26 @@ export default function Home() {
     return () => unsubscribe();
   }, [user]);
 
-  // Computed Total Net Worth
-  const totalNetWorth = useMemo(() => {
-    return assets.reduce((sum, asset) => sum + asset.value, 0);
+  // Computed Values
+  const { totalAssets, totalLiabilities, totalNetWorth } = useMemo(() => {
+    const assetsOnly = assets.filter(a => a.category !== 'LIABILITY');
+    const liabilitiesOnly = assets.filter(a => a.category === 'LIABILITY');
+
+    const tAssets = assetsOnly.reduce((sum, asset) => sum + asset.value, 0);
+    const tLiabilities = liabilitiesOnly.reduce((sum, asset) => sum + asset.value, 0);
+
+    return {
+      totalAssets: tAssets,
+      totalLiabilities: tLiabilities,
+      totalNetWorth: tAssets - tLiabilities
+    };
   }, [assets]);
+
+  // Chart Data
+  const debtVsAssetData = useMemo(() => [
+    { name: 'Assets', value: totalAssets / 100 },
+    { name: 'Debt', value: totalLiabilities / 100 }
+  ], [totalAssets, totalLiabilities]);
 
   const handleAddAsset = async (newAsset: Asset) => {
     if (!user) return;
@@ -162,6 +198,37 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        {/* Debt vs Asset Chart */}
+        {assets.length > 0 && (
+          <section className="mt-12 bg-slate-900/50 border border-slate-800 rounded-3xl p-8">
+            <h2 className="text-xl font-medium text-slate-300 mb-8 flex items-center gap-2">
+              <TrendingUp size={20} className="text-emerald-500" />
+              Assets vs. Liabilities
+            </h2>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={debtVsAssetData} layout="vertical" barSize={40}>
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fill: '#94a3b8', fontSize: 14 }}
+                    width={60}
+                  />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {debtVsAssetData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.name === 'Assets' ? '#10b981' : '#f43f5e'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Modal Overlay */}

@@ -13,7 +13,8 @@ import {
     Check,
     ChevronRight,
     ChevronLeft,
-    X
+    X,
+    CreditCard
 } from "lucide-react";
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -22,6 +23,19 @@ import { fetchStockPrice } from "@/lib/logic/stock-api";
 export function cn(...inputs: (string | undefined | null | false)[]) {
     return twMerge(clsx(inputs));
 }
+
+// Helper: Format number with commas
+const formatNumber = (num: number | string) => {
+    if (!num) return '';
+    const clean = String(num).replace(/,/g, '');
+    if (isNaN(Number(clean))) return clean;
+    return new Intl.NumberFormat('en-US').format(Number(clean));
+};
+
+// Helper: Parse number from formatted string
+const parseNumber = (val: string) => {
+    return Number(val.replace(/,/g, ''));
+};
 
 export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (asset: any) => void; onClose: () => void }) {
     const [step, setStep] = useState(1);
@@ -42,7 +56,9 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
         { id: "REAL_ESTATE", label: "Real Estate", icon: Home },
         { id: "CRYPTO", label: "Crypto", icon: Bitcoin },
         { id: "VEHICLE", label: "Vehicle", icon: Car },
+        { id: "VEHICLE", label: "Vehicle", icon: Car },
         { id: "EOSB", label: "UAE Gratuity", icon: Briefcase },
+        { id: "LIABILITY", label: "Liability (Loan/CC)", icon: CreditCard },
     ];
 
     const handleCategorySelect = (category: AssetCategory) => {
@@ -282,11 +298,12 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                                 <div>
                                     <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Market Value</label>
                                     <input
-                                        type="number"
-                                        // Display as units
-                                        value={formData.marketValue ? formData.marketValue / 100 : ''}
+                                        type="text"
+                                        // Display as units with commas
+                                        value={formData.marketValue ? formatNumber(formData.marketValue / 100) : ''}
                                         onChange={e => {
-                                            const mVal = Number(e.target.value) * 100; // Store as cents
+                                            const rawVal = parseNumber(e.target.value);
+                                            const mVal = rawVal * 100; // Store as cents
                                             const lVal = formData.loanValue || 0; // Assume loanValue is already in cents
                                             const netCents = mVal - lVal;
                                             setFormData(prev => ({ ...prev, marketValue: mVal, value: netCents })); // Value in Cents
@@ -299,10 +316,11 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                                 <div>
                                     <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">Outstanding Loan</label>
                                     <input
-                                        type="number"
-                                        value={formData.loanValue ? formData.loanValue / 100 : ''}
+                                        type="text"
+                                        value={formData.loanValue ? formatNumber(formData.loanValue / 100) : ''}
                                         onChange={e => {
-                                            const lVal = Number(e.target.value) * 100; // Cents
+                                            const rawVal = parseNumber(e.target.value);
+                                            const lVal = rawVal * 100; // Cents
                                             const mVal = formData.marketValue || 0; // Assume marketValue is already in cents
                                             const netCents = mVal - lVal;
                                             setFormData(prev => ({ ...prev, loanValue: lVal, value: netCents })); // Value in Cents
@@ -341,12 +359,22 @@ export default function AddAssetForm({ onAddAsset, onClose }: { onAddAsset: (ass
                     {formData.category !== 'EOSB' && (
                         <div>
                             <label className="block text-xs font-medium text-zinc-400 mb-1 uppercase tracking-wider">
-                                Total Value {(formData.category === 'EQUITY' || formData.category === 'CRYPTO') ? '(Auto-Calculated or Manual)' : '(Base Currency)'}
+                                {formData.category === 'LIABILITY' ? 'Loan / Outstanding Amount' :
+                                    (formData.category === 'EQUITY' || formData.category === 'CRYPTO') ? 'Total Value (Auto-Calculated or Manual)' : 'Total Value (Base Currency)'}
                             </label>
                             <input
-                                type="number"
-                                value={formData.value || ''}
-                                onChange={e => setFormData({ ...formData, value: e.target.value })}
+                                type="text"
+                                value={formData.value ? formatNumber(formData.value) : ''}
+                                onChange={e => {
+                                    const rawVal = parseNumber(e.target.value);
+                                    // Handle manual entry for EQUITY/CRYPTO differently if needed, 
+                                    // but usually we store as-is or x100 depending on backend expectation.
+                                    // The logic in step 1 says: "If Other, value is in Currency Units (from input), so * 100."
+                                    // But here we are setting formData.value directly. 
+                                    // IMPORTANT: The submit handler logic does: `value: data.category === 'EOSB' ? Number(data.value) : Math.round(Number(data.value) * 100)`
+                                    // So `formData.value` should be the RAW UNIT value (e.g. 5000), not cents.
+                                    setFormData({ ...formData, value: rawVal })
+                                }}
                                 className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:border-emerald-500 transition-colors"
                                 placeholder="0.00"
                             />
