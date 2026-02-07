@@ -39,12 +39,16 @@ export default function NetWorthHistoryChart({ data }: NetWorthHistoryChartProps
         fullDate: new Date(record.timestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
     }));
 
-    if (data.length < 2) {
-        return (
-            <div className="mt-8 bg-slate-900/50 border border-slate-800 rounded-3xl p-8 flex items-center justify-center text-slate-500 h-64">
-                Not enough data history to display chart. Add more changes to see trends.
-            </div>
-        );
+    // If we only have 1 data point, duplicate it to create a flat line visual
+    const finalChartData = chartData.length === 1
+        ? [
+            { ...chartData[0], date: 'Start', timestamp: chartData[0].timestamp - 86400000 },
+            chartData[0]
+        ]
+        : chartData;
+
+    if (data.length === 0) {
+        return null;
     }
 
     return (
@@ -55,7 +59,7 @@ export default function NetWorthHistoryChart({ data }: NetWorthHistoryChartProps
             </h2>
             <div className="h-72 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                    <AreaChart data={finalChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
