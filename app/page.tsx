@@ -258,9 +258,12 @@ export default function Home() {
         )}
 
         {/* History Chart */}
-        {history.length > 0 && (
-          <NetWorthHistoryChart data={history} />
-        )}
+        <NetWorthHistoryChart data={history} />
+
+        <div className="mt-12 text-center text-slate-700 font-mono text-xs pb-8">
+          <p>Debug: History Count = {history.length}</p>
+          <p>User ID: {user?.uid}</p>
+        </div>
       </div>
 
       {/* Modal Overlay */}
