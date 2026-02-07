@@ -151,7 +151,7 @@ export default function Home() {
       <div className="max-w-4xl mx-auto">
         <header className="flex justify-between items-center mb-12">
           <div>
-            <h1 className="text-slate-400 text-sm uppercase tracking-widest">Legacy Mirror</h1>
+            <h1 className="text-slate-400 text-sm uppercase tracking-widest">Net Worth</h1>
             <p className="text-xs text-emerald-500/80 mb-2 font-mono">For my son</p>
             <p className="text-5xl font-bold text-emerald-400 mt-2">
               {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(totalNetWorth / 100)}
