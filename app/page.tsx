@@ -208,7 +208,7 @@ export default function Home() {
             </h2>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={debtVsAssetData} layout="vertical" barSize={40}>
+                <BarChart data={debtVsAssetData} layout="vertical" barSize={40} margin={{ top: 0, right: 120, left: 0, bottom: 0 }}>
                   <XAxis type="number" hide />
                   <YAxis
                     dataKey="name"
