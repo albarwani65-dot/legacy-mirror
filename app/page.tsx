@@ -21,7 +21,7 @@ import { subscribeToAssets, addAssetToFirestore } from '@/lib/client-db';
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 
 // Helper to map category to icon and color
 const getCategoryDetails = (category: AssetCategory): { icon: LucideIcon, color: string } => {
@@ -220,6 +220,12 @@ export default function Home() {
                   />
                   <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      fill="#fff"
+                      formatter={(val: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'AED' }).format(val)}
+                    />
                     {debtVsAssetData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.name === 'Assets' ? '#10b981' : '#f43f5e'} />
                     ))}
