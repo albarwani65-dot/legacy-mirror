@@ -174,6 +174,20 @@ export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAs
         onClose();
     };
 
+    const handleBackToEdit = () => {
+        setFormData(prev => {
+            const data = { ...prev };
+            // Convert back to units from cents for the inputs
+            if (data.category !== 'EOSB' && data.value) {
+                data.value = data.value / 100;
+            }
+            if (data.marketValue) data.marketValue = data.marketValue / 100;
+            if (data.loanValue) data.loanValue = data.loanValue / 100;
+            return data;
+        });
+        setStep(2);
+    };
+
     return (
         <div className="w-full max-w-2xl bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl relative">
             <button
@@ -446,7 +460,7 @@ export default function AddAssetForm({ onAddAsset, onClose, initialData }: AddAs
                     </div>
 
                     <div className="flex justify-between pt-4">
-                        <button type="button" onClick={() => setStep(2)} className="text-zinc-400 hover:text-white flex items-center">
+                        <button type="button" onClick={handleBackToEdit} className="text-zinc-400 hover:text-white flex items-center">
                             <ChevronLeft className="w-4 h-4 mr-1" /> Back
                         </button>
                         <button onClick={finalSubmit} className="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-lg font-medium transition-colors w-full ml-4">
